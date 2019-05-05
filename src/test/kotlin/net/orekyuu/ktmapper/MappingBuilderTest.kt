@@ -11,6 +11,15 @@ data class Receipt(val id: Long, val createdAt: LocalDateTime, val items: List<L
 
 internal class MappingBuilderTest {
 
+    val testData = listOf(
+        mapOf("receipt_id" to 1L, "created_at" to LocalDate.of(2019, 5, 5).atStartOfDay(),
+            "line_item_id" to 1L, "quantity" to 1L, "item_id" to 1L, "name" to "item1"),
+        mapOf("receipt_id" to 1L, "created_at" to LocalDate.of(2019, 5, 5).atStartOfDay(),
+            "line_item_id" to 2L, "quantity" to 3L, "item_id" to 2L, "name" to "item2"),
+        mapOf("receipt_id" to 2L, "created_at" to LocalDate.of(2019, 5, 6).atStartOfDay(),
+            "line_item_id" to 3L, "quantity" to 3L, "item_id" to 1L, "name" to "item1")
+    )
+
     @Test
     fun mappingFlatModel() {
         val testData = listOf(
@@ -55,23 +64,21 @@ internal class MappingBuilderTest {
 
     @Test
     fun mappingRelation() {
-        val testData = listOf(
-            mapOf("receipt_id" to 1L, "created_at" to LocalDate.of(2019, 5, 5).atStartOfDay(),
-                "line_item_id" to 1L, "quantity" to 1L, "item_id" to 1L, "name" to "item1"),
-            mapOf("receipt_id" to 1L, "created_at" to LocalDate.of(2019, 5, 5).atStartOfDay(),
-                "line_item_id" to 2L, "quantity" to 3L, "item_id" to 2L, "name" to "item2"),
-            mapOf("receipt_id" to 2L, "created_at" to LocalDate.of(2019, 5, 6).atStartOfDay(),
-                "line_item_id" to 3L, "quantity" to 3L, "item_id" to 1L, "name" to "item1")
-        )
-
         val rowMapper = mapping<Map<String, Any>, Receipt> {
-            primaryKey {
-                it["receipt_id"] as Long
-            }
+            primaryKey { it["receipt_id"] as Long }
 
-            val lineItemRef = hasMany {
-                val item = Item(it["item_id"] as Long, it["name"] as String)
-                LineItem(item, it["quantity"] as Long)
+            val lineItemRef = hasMany<LineItem> {
+                primaryKey { it["line_item_id"] as Long }
+
+                val itemRef = hasOne<Item> {
+                    attribute {
+                        Item(it["item_id"] as Long, it["name"] as String)
+                    }
+                }
+
+                attribute {
+                    LineItem(findOne(itemRef, it)!!, it["quantity"] as Long)
+                }
             }
 
             attribute {
@@ -90,19 +97,17 @@ internal class MappingBuilderTest {
 
     @Test
     fun mappingRelationPKNotfound() {
-        val testData = listOf(
-            mapOf("receipt_id" to 1L, "created_at" to LocalDate.of(2019, 5, 5).atStartOfDay(),
-                "line_item_id" to 1L, "quantity" to 1L, "item_id" to 1L, "name" to "item1"),
-            mapOf("receipt_id" to 1L, "created_at" to LocalDate.of(2019, 5, 5).atStartOfDay(),
-                "line_item_id" to 2L, "quantity" to 3L, "item_id" to 2L, "name" to "item2"),
-            mapOf("receipt_id" to 2L, "created_at" to LocalDate.of(2019, 5, 6).atStartOfDay(),
-                "line_item_id" to 3L, "quantity" to 3L, "item_id" to 1L, "name" to "item1")
-        )
-
         val rowMapper = mapping<Map<String, Any>, Receipt> {
-            val lineItemRef = hasMany {
-                val item = Item(it["item_id"] as Long, it["name"] as String)
-                LineItem(item, it["quantity"] as Long)
+            val lineItemRef = hasMany<LineItem> {
+                val itemRef = hasOne<Item> {
+                    attribute {
+                        Item(it["item_id"] as Long, it["name"] as String)
+                    }
+                }
+
+                attribute {
+                    LineItem(findOne(itemRef, it)!!, it["quantity"] as Long)
+                }
             }
 
             attribute {

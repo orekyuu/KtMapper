@@ -2,7 +2,7 @@ package net.orekyuu.ktmapper
 
 import java.util.*
 
-class Relation<ROW>(val id: RelationReference<*>, val func: Context<ROW>.(ROW) -> Any) {
+class Relation<ROW>(val id: RelationReference<*>, val mapping: MappingBuilder<ROW, *>.(Context<ROW>) -> Unit) {
 
 }
 
@@ -22,12 +22,17 @@ class MappingBuilder<ROW, RESULT> {
         attributeFunction = func
     }
 
-    fun <CHILD> hasMany(func: Context<ROW>.(ROW) -> CHILD): RelationReference<CHILD> {
+    fun <CHILD> hasMany(builderFunc: MappingBuilder<ROW, CHILD>.(Context<ROW>) -> Unit): RelationReference<CHILD> {
         val reference = RelationReference<CHILD>()
-        @Suppress("UNCHECKED_CAST") val relation = Relation(reference, func as Context<ROW>.(ROW) -> Any)
+
+        @Suppress("UNCHECKED_CAST") val relation = Relation(reference, builderFunc as MappingBuilder<ROW, *>.(Context<ROW>) -> Unit)
         hasManyRelations.add(relation)
 
         return reference
+    }
+
+    fun <CHILD> hasOne(builderFunc: MappingBuilder<ROW, CHILD>.(Context<ROW>) -> Unit): RelationReference<CHILD> {
+        return hasMany(builderFunc)
     }
 
     internal fun createRowMapper(): RowMapper<ROW, RESULT> {

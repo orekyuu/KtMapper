@@ -32,7 +32,17 @@ class Context<ROW>(
 
         val parentKeyFunc = primaryKeyFunc!!(row)
         val rawData = groupingRows.values[parentKeyFunc] ?: listOf()
-        return rawData.map { relation.func(this, it) } as List<T>
+
+        val builder = MappingBuilder<ROW, Any>()
+        relation.mapping(builder, this)
+        val rowMapper = builder.createRowMapper()
+
+        return rowMapper.toList(rawData) as List<T>
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun <T> findOne(reference: RelationReference<T>, row: ROW): T? {
+        return findChild(reference, row).firstOrNull()
     }
 
     private fun checkPrimaryKeyFuncValidation() {
