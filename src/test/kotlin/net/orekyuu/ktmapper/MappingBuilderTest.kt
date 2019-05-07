@@ -82,7 +82,7 @@ internal class MappingBuilderTest {
             }
 
             attribute {
-                Receipt(it["receipt_id"] as Long, it["created_at"] as LocalDateTime, findChild(lineItemRef, it))
+                Receipt(it["receipt_id"] as Long, it["created_at"] as LocalDateTime, findList(lineItemRef, it))
             }
         }
 
@@ -111,7 +111,7 @@ internal class MappingBuilderTest {
             }
 
             attribute {
-                Receipt(it["receipt_id"] as Long, it["created_at"] as LocalDateTime, findChild(lineItemRef, it))
+                Receipt(it["receipt_id"] as Long, it["created_at"] as LocalDateTime, findList(lineItemRef, it))
             }
         }
 

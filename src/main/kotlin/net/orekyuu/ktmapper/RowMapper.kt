@@ -24,8 +24,15 @@ class Context<ROW>(
         relationMap = map
     }
 
-    @Suppress("UNCHECKED_CAST")
-    fun <T> findChild(reference: RelationReference<T>, row: ROW): List<T> {
+    fun <T> findList(reference: HasManyRelationReference<T>, row: ROW): List<T> {
+        return findValues(reference, row)
+    }
+
+    fun <T> findOne(reference: HasOneRelationReference<T>, row: ROW): T? {
+        return findValues(reference, row).firstOrNull()
+    }
+
+    private fun <T> findValues(reference: RelationReference<T>, row: ROW): List<T> {
         val groupingRows = relationMap[reference] ?: throw IllegalArgumentException()
         val relation = groupingRows.relation
         checkPrimaryKeyFuncValidation()
@@ -37,12 +44,8 @@ class Context<ROW>(
         relation.mapping(builder, this)
         val rowMapper = builder.createRowMapper()
 
+        @Suppress("UNCHECKED_CAST")
         return rowMapper.toList(rawData) as List<T>
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    fun <T> findOne(reference: RelationReference<T>, row: ROW): T? {
-        return findChild(reference, row).firstOrNull()
     }
 
     private fun checkPrimaryKeyFuncValidation() {

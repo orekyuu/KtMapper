@@ -2,16 +2,18 @@ package net.orekyuu.ktmapper
 
 import java.util.*
 
-class Relation<ROW>(val id: RelationReference<*>, val mapping: MappingBuilder<ROW, *>.(Context<ROW>) -> Unit) {
+class Relation<ROW>(val id: RelationReference<*>, val mapping: MappingBuilder<ROW, *>.(Context<ROW>) -> Unit)
 
-}
+open class RelationReference<T>(protected open val id: String)
 
-data class RelationReference<T>(private val id: String = UUID.randomUUID().toString())
+data class HasOneRelationReference<T>(override val id: String = UUID.randomUUID().toString()) : RelationReference<T>(id)
+data class HasManyRelationReference<T>(override val id: String = UUID.randomUUID().toString()) : RelationReference<T>(id)
+
 
 class MappingBuilder<ROW, RESULT> {
 
     private var attributeFunction: (Context<ROW>.(ROW) -> RESULT)? = null
-    private var hasManyRelations: MutableList<Relation<ROW>> = mutableListOf()
+    private var relations: MutableList<Relation<ROW>> = mutableListOf()
     private var primaryKeyFunc: ((ROW) -> Any)? = null
 
     fun primaryKey(primaryKeyFunc: (ROW) -> Any) {
@@ -22,20 +24,25 @@ class MappingBuilder<ROW, RESULT> {
         attributeFunction = func
     }
 
-    fun <CHILD> hasMany(builderFunc: MappingBuilder<ROW, CHILD>.(Context<ROW>) -> Unit): RelationReference<CHILD> {
-        val reference = RelationReference<CHILD>()
+    fun <CHILD> hasMany(builderFunc: MappingBuilder<ROW, CHILD>.(Context<ROW>) -> Unit): HasManyRelationReference<CHILD> {
+        val reference = HasManyRelationReference<CHILD>()
 
         @Suppress("UNCHECKED_CAST") val relation = Relation(reference, builderFunc as MappingBuilder<ROW, *>.(Context<ROW>) -> Unit)
-        hasManyRelations.add(relation)
+        relations.add(relation)
 
         return reference
     }
 
-    fun <CHILD> hasOne(builderFunc: MappingBuilder<ROW, CHILD>.(Context<ROW>) -> Unit): RelationReference<CHILD> {
-        return hasMany(builderFunc)
+    fun <CHILD> hasOne(builderFunc: MappingBuilder<ROW, CHILD>.(Context<ROW>) -> Unit): HasOneRelationReference<CHILD> {
+        val reference = HasOneRelationReference<CHILD>()
+
+        @Suppress("UNCHECKED_CAST") val relation = Relation(reference, builderFunc as MappingBuilder<ROW, *>.(Context<ROW>) -> Unit)
+        relations.add(relation)
+
+        return reference
     }
 
     internal fun createRowMapper(): RowMapper<ROW, RESULT> {
-        return RowMapper(primaryKeyFunc, attributeFunction, hasManyRelations)
+        return RowMapper(primaryKeyFunc, attributeFunction, relations)
     }
 }
