@@ -1,9 +1,11 @@
 plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.3.31'
+    id "com.jfrog.bintray" version "1.8.4"
 }
 
 group 'net.orekyuu'
-version '0.0.1'
+archivesBaseName = 'kt-mapper'
+version '0.0.2'
 
 repositories {
     mavenCentral()
@@ -25,4 +27,16 @@ compileTestKotlin {
 }
 test {
     useJUnitPlatform()
+}
+
+bintray {
+    user = project.hasProperty('bintray_user') ? bintray_user : ''
+    key = project.hasProperty('bintray_key') ? bintray_key : ''
+
+    pkg {
+        repo = 'KtMapper'
+        name = project.group + '.' + archivesBaseName
+        licenses = ['MIT']
+        vcsUrl = 'https://github.com/orekyuu/KtMapper.git'
+    }
 }

@@ -1,4 +1,5 @@
-# KtMapper
+# KtMapper 
+[ ![Download](https://api.bintray.com/packages/orekyuu/KtMapper/net.orekyuu.kt-mapper/images/download.svg?version=0.0.2) ](https://bintray.com/orekyuu/KtMapper/net.orekyuu.kt-mapper/0.0.2/link)   
 SQLのJoinした結果をドメインモデルにマッピングするライブラリです。  
 DSLを使ってMappingの構造を定義します。
 
