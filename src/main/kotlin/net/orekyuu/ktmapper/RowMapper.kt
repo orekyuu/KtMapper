@@ -1,12 +1,11 @@
 package net.orekyuu.ktmapper
 
-class GroupingRows<ROW>(val relation: Relation<ROW>, val values:  Map<Any, List<ROW>>) {
+internal class GroupingRows<ROW>(val relation: Relation<ROW>, val values:  Map<Any, List<ROW>>)
 
-}
-
-class Context<ROW>(
+class Context<ROW> internal constructor(
     private val primaryKeyFunc: ((ROW) -> Any)?,
-    hasManyRelations: MutableList<Relation<ROW>>, rows: List<ROW>
+    hasManyRelations: MutableList<Relation<ROW>>,
+    rows: Collection<ROW>
 ) {
     private val relationMap: Map<RelationReference<*>, GroupingRows<ROW>>
 
@@ -45,7 +44,7 @@ class Context<ROW>(
         val rowMapper = builder.createRowMapper()
 
         @Suppress("UNCHECKED_CAST")
-        return rowMapper.toList(rawData) as List<T>
+        return rowMapper.mappingList(rawData) as List<T>
     }
 
     private fun checkPrimaryKeyFuncValidation() {
@@ -58,19 +57,35 @@ class Context<ROW>(
 
 class RowMapper<ROW, RESULT> internal constructor(
     private val primaryKeyFunc: ((ROW) -> Any)?,
-    private val fieldFunction: (Context<ROW>.(ROW) -> RESULT)?,
+    private val domainFunction: (Context<ROW>.(ROW) -> RESULT)?,
     private val hasManyRelations: MutableList<Relation<ROW>>
 ) {
 
-    fun toList(rows: List<ROW>): List<RESULT> {
+    fun mappingList(rows: Collection<ROW>): List<RESULT> {
 
         val context = Context(primaryKeyFunc, hasManyRelations, rows)
         val list = primaryKeyFunc?.let { rows.distinctBy(it) } ?: rows
 
         @Suppress("UNCHECKED_CAST")
         return list.map { row ->
-            val result = fieldFunction?.let { context.it(row) }
+            val result = domainFunction?.let { context.it(row) }
             result
         }.filter { it != null } as List<RESULT>
+    }
+
+    fun mappingSet(rows: Collection<ROW>): Set<RESULT> {
+
+        val context = Context(primaryKeyFunc, hasManyRelations, rows)
+        val list = primaryKeyFunc?.let { rows.distinctBy(it) } ?: rows
+
+        @Suppress("UNCHECKED_CAST")
+        return list.map { row ->
+            val result = domainFunction?.let { context.it(row) }
+            result
+        }.filter { it != null }.toSet() as Set<RESULT>
+    }
+
+    fun firstOrNull(rows: Collection<ROW>): RESULT? {
+        return mappingList(rows).firstOrNull()
     }
 }

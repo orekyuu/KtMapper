@@ -12,7 +12,7 @@ data class HasManyRelationReference<T>(override val id: String = UUID.randomUUID
 
 class MappingBuilder<ROW, RESULT> {
 
-    private var attributeFunction: (Context<ROW>.(ROW) -> RESULT)? = null
+    private var domainFunction: (Context<ROW>.(ROW) -> RESULT)? = null
     private var relations: MutableList<Relation<ROW>> = mutableListOf()
     private var primaryKeyFunc: ((ROW) -> Any)? = null
 
@@ -20,8 +20,8 @@ class MappingBuilder<ROW, RESULT> {
         this.primaryKeyFunc = primaryKeyFunc
     }
 
-    fun attribute(func: Context<ROW>.(ROW) -> RESULT) {
-        attributeFunction = func
+    fun domain(func: Context<ROW>.(ROW) -> RESULT) {
+        domainFunction = func
     }
 
     fun <CHILD> hasMany(builderFunc: MappingBuilder<ROW, CHILD>.(Context<ROW>) -> Unit): HasManyRelationReference<CHILD> {
@@ -43,6 +43,6 @@ class MappingBuilder<ROW, RESULT> {
     }
 
     internal fun createRowMapper(): RowMapper<ROW, RESULT> {
-        return RowMapper(primaryKeyFunc, attributeFunction, relations)
+        return RowMapper(primaryKeyFunc, domainFunction, relations)
     }
 }

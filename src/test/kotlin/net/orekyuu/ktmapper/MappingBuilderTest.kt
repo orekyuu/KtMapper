@@ -28,12 +28,12 @@ internal class MappingBuilderTest {
         )
 
         val rowMapper = mapping<Map<String, Any>, Receipt> {
-            attribute {
+            domain {
                 Receipt(it["receipt_id"] as Long, it["created_at"] as LocalDateTime, listOf())
             }
         }
 
-        Assertions.assertThat(rowMapper.toList(testData)).isEqualTo(listOf(
+        Assertions.assertThat(rowMapper.mappingList(testData)).isEqualTo(listOf(
             Receipt(1L, LocalDate.of(2019, 5, 5).atStartOfDay(), listOf()),
             Receipt(2L, LocalDate.of(2019, 5, 6).atStartOfDay(), listOf())
         ))
@@ -51,12 +51,12 @@ internal class MappingBuilderTest {
                 it["receipt_id"] as Long
             }
 
-            attribute {
+            domain {
                 Receipt(it["receipt_id"] as Long, it["created_at"] as LocalDateTime, listOf())
             }
         }
 
-        Assertions.assertThat(rowMapper.toList(testData)).isEqualTo(listOf(
+        Assertions.assertThat(rowMapper.mappingList(testData)).isEqualTo(listOf(
             Receipt(1L, LocalDate.of(2019, 5, 5).atStartOfDay(), listOf()),
             Receipt(2L, LocalDate.of(2019, 5, 6).atStartOfDay(), listOf())
         ))
@@ -71,22 +71,22 @@ internal class MappingBuilderTest {
                 primaryKey { it["line_item_id"] as Long }
 
                 val itemRef = hasOne<Item> {
-                    attribute {
+                    domain {
                         Item(it["item_id"] as Long, it["name"] as String)
                     }
                 }
 
-                attribute {
+                domain {
                     LineItem(findOne(itemRef, it)!!, it["quantity"] as Long)
                 }
             }
 
-            attribute {
+            domain {
                 Receipt(it["receipt_id"] as Long, it["created_at"] as LocalDateTime, findList(lineItemRef, it))
             }
         }
 
-        val toList = rowMapper.toList(testData)
+        val toList = rowMapper.mappingList(testData)
         Assertions.assertThat(toList).isEqualTo(listOf(
             Receipt(1L, LocalDate.of(2019, 5, 5).atStartOfDay(),
                 listOf(LineItem(Item(1L, "item1"), 1), LineItem(Item(2L, "item2"), 3))),
@@ -100,22 +100,22 @@ internal class MappingBuilderTest {
         val rowMapper = mapping<Map<String, Any>, Receipt> {
             val lineItemRef = hasMany<LineItem> {
                 val itemRef = hasOne<Item> {
-                    attribute {
+                    domain {
                         Item(it["item_id"] as Long, it["name"] as String)
                     }
                 }
 
-                attribute {
+                domain {
                     LineItem(findOne(itemRef, it)!!, it["quantity"] as Long)
                 }
             }
 
-            attribute {
+            domain {
                 Receipt(it["receipt_id"] as Long, it["created_at"] as LocalDateTime, findList(lineItemRef, it))
             }
         }
 
-        Assertions.assertThatThrownBy { rowMapper.toList(testData) }
+        Assertions.assertThatThrownBy { rowMapper.mappingList(testData) }
             .hasMessage("primaryKey block is required.")
             .isInstanceOf(IllegalStateException::class.java)
     }
