@@ -13,30 +13,24 @@ data class Receipt(val id: Long, val createdAt: LocalDateTime, val items: List<L
 
 // マッピング定義
 val rowMapper = mapping<Map<String, Any>, Receipt> {
-    // リレーションのマッピングには主キーの宣言が必要
-    // itにはDBから持ってきた行を表すMap<String, Any>が渡されている
-    primaryKey { it["receipt_id"] as Long }
+    primaryKey { Pair(it["receipt_id"] as Long, it["created_at"] as LocalDateTime) }
 
-    // hasManyで1-*のリレーションができる
     val lineItemRef = hasMany<LineItem> {
         primaryKey { it["line_item_id"] as Long }
-        // ネストしたリレーションのマッピング
-        // 1-0..1はhasOneで宣言する
+
         val itemRef = hasOne<Item> {
-            attribute {
+            domain {
                 Item(it["item_id"] as Long, it["name"] as String)
             }
         }
 
-        // 行を処理してドメインモデルを返す
-        attribute {
+        domain {
             LineItem(findOne(itemRef, it)!!, it["quantity"] as Long)
         }
     }
 
-    attribute {
-        // 関連を持って来るにはhasManyやhasOneの戻り値のリファレンスをfindChildに渡す
-        Receipt(it["receipt_id"] as Long, it["created_at"] as LocalDateTime, findChild(lineItemRef, it))
+    domain {
+        Receipt(it["receipt_id"] as Long, it["created_at"] as LocalDateTime, findList(lineItemRef, it))
     }
 }
 
@@ -50,5 +44,7 @@ val testData = listOf(
 )
 
 // mapperを使った変換
-val result: List<Receipt> = rowMapper.toList(testData)
+val result: List<Receipt> = rowMapper.mappingList(testData)
+val result: Set<Receipt> = rowMapper.mappingSet(testData)
+val result: Receipt? = rowMapper.firstOrNull(testData)
 ```
