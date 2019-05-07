@@ -1,5 +1,8 @@
 package net.orekyuu.ktmapper
 
+import java.util.stream.Collectors
+import java.util.stream.Stream
+
 internal class GroupingRows<ROW>(val relation: Relation<ROW>, val values:  Map<Any, List<ROW>>)
 
 class Context<ROW> internal constructor(
@@ -62,30 +65,25 @@ class RowMapper<ROW, RESULT> internal constructor(
 ) {
 
     fun mappingList(rows: Collection<ROW>): List<RESULT> {
-
-        val context = Context(primaryKeyFunc, hasManyRelations, rows)
-        val list = primaryKeyFunc?.let { rows.distinctBy(it) } ?: rows
-
-        @Suppress("UNCHECKED_CAST")
-        return list.map { row ->
-            val result = domainFunction?.let { context.it(row) }
-            result
-        }.filter { it != null } as List<RESULT>
+        return domainStream(rows).collect(Collectors.toList())
     }
 
     fun mappingSet(rows: Collection<ROW>): Set<RESULT> {
+        return domainStream(rows).collect(Collectors.toSet())
+    }
 
+    fun firstOrNull(rows: Collection<ROW>): RESULT? {
+        return domainStream(rows).findFirst().orElse(null)
+    }
+
+    private fun domainStream(rows: Collection<ROW>): Stream<RESULT> {
         val context = Context(primaryKeyFunc, hasManyRelations, rows)
         val list = primaryKeyFunc?.let { rows.distinctBy(it) } ?: rows
 
         @Suppress("UNCHECKED_CAST")
-        return list.map { row ->
+        return list.stream().map { row ->
             val result = domainFunction?.let { context.it(row) }
             result
-        }.filter { it != null }.toSet() as Set<RESULT>
-    }
-
-    fun firstOrNull(rows: Collection<ROW>): RESULT? {
-        return mappingList(rows).firstOrNull()
+        }.filter { it != null } as Stream<RESULT>
     }
 }
